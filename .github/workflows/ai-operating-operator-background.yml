@@ -1,0 +1,49 @@
+name: AI Operating Operator background worker
+on:
+  push:
+    paths:
+      - 'apps/ai-operating-operator/runtime/tasks/**'
+      - 'apps/ai-operating-operator/capability-feed.mjs'
+      - 'apps/ai-operating-operator/adapters/capability-sources-adapter.mjs'
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ai-operating-operator-background
+  cancel-in-progress: false
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GITHUB_TOKEN: ${{ secrets.OPERATOR_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      OPERATOR_GITHUB_REPOS: ${{ github.repository }},rohitg00/ai-engineering-from-scratch
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify operator repository scope
+        run: |
+          test -n "$GITHUB_REPOSITORY"
+          test "$GITHUB_REPOSITORY" = "$OPERATOR_GITHUB_REPOS"
+      - name: Refresh five-source capability feed
+        run: node apps/ai-operating-operator/test-continuous-runtime.mjs
+      - name: Run background operator
+        run: node apps/ai-operating-operator/worker.mjs
+      - name: Persist operator evidence
+        run: |
+          git config user.name "ai-operating-operator"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/ai-operating-operator/runtime/results apps/ai-operating-operator/runtime/tasks
+          git diff --cached --quiet || git commit -m "operator: persist background run evidence"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break
+            git rebase --abort || true
+            sleep 2
+          done

@@ -1,0 +1,39 @@
+{
+  "taskId": "background-github-smoke-2026-09-26-d",
+  "state": "EVIDENCE_CAPTURED",
+  "evidence": [
+    {
+      "evidenceId": "112e0c5a-f0c9-46e9-9363-9d9d9fe5caa3",
+      "kind": "action",
+      "capturedAt": "2026-09-26T18:29:22.259Z",
+      "adapter": "platform.github",
+      "executionId": "b30735f1-9af5-4d61-b8ee-cfe851824b03"
+    },
+    {
+      "evidenceId": "fbfd76e9-d4ac-45dd-9962-34a753637323",
+      "kind": "verification",
+      "capturedAt": "2026-09-26T18:29:22.261Z",
+      "verifierId": "github-independent-verifier-v1",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "evidenceId": "fbe453d3-8c10-4752-b119-14b051771f42",
+      "kind": "independent_verification",
+      "capturedAt": "2026-09-26T18:29:22.261Z",
+      "verifierId": "github-independent-verifier-v1",
+      "passed": true,
+      "errors": []
+    }
+  ],
+  "verification": {
+    "verifierId": "github-independent-verifier-v1",
+    "passed": true,
+    "errors": [],
+    "executionId": "b30735f1-9af5-4d61-b8ee-cfe851824b03"
+  },
+  "completion": {
+    "ok": true,
+    "errors": []
+  }
+}

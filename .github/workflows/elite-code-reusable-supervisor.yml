@@ -1,0 +1,219 @@
+# Central reusable Elite Code + Code Progress Supervisor
+
+name: elite-code-reusable-supervisor
+
+on:
+  workflow_call:
+    inputs:
+      goal:
+        required: true
+        type: string
+      role:
+        required: false
+        default: worker
+        type: string
+      persist_to_isolated_branch:
+        required: false
+        default: false
+        type: boolean
+    secrets:
+      EASY_OPENAI_API_KEY:
+        required: false
+      OPENAI_API_KEY:
+        required: false
+      EASY_OPERATOR_SECONDARY_LLM_API_KEY:
+        required: false
+      EASY_SECONDARY_LLM_API_KEY:
+        required: false
+
+jobs:
+  supervise:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: elite-supervisor-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Prepare isolated worker branch
+        if: inputs.persist_to_isolated_branch
+        env:
+          PERSIST_BRANCH: elite-worker/${{ github.run_id }}
+        run: |
+          git switch -c "$PERSIST_BRANCH"
+          echo "PERSIST_BRANCH=$PERSIST_BRANCH" >> "$GITHUB_ENV"
+
+      - name: Checkout Elite Code tools outside target history
+        uses: actions/checkout@v6
+        with:
+          repository: salamou1944/agent-skills
+          ref: main
+          path: .elite-code-tools
+          fetch-depth: 1
+
+      - name: Inspect target rules and state
+        env:
+          GOAL: ${{ inputs.goal }}
+        run: |
+          set -euo pipefail
+          echo '=== TARGET ==='
+          git status --short
+          git log -8 --oneline --decorate
+          echo '=== RULE FILES ==='
+          for f in PROJECT-RULES.md CORE-RULES.md AGENTS.md CONTRIBUTING.md SECURITY.md; do
+            if [ -f "$f" ]; then
+              echo "--- $f ---"
+              sed -n '1,260p' "$f"
+            fi
+          done
+          {
+            git status --short
+            git log -8 --oneline --decorate
+            for f in PROJECT-RULES.md CORE-RULES.md AGENTS.md CONTRIBUTING.md SECURITY.md; do
+              if [ -f "$f" ]; then printf '\n--- %s ---\n' "$f"; sed -n '1,260p' "$f"; fi
+            done
+            printf '\n--- file inventory ---\n'
+            find . -maxdepth 3 -type f -not -path './.git/*' -not -path './node_modules/*' -not -path './.elite-code-tools/*' | sort | head -400
+          } > /tmp/target-context.txt
+
+      - name: Prepare current goal and unfinished task queue
+        env:
+          GOAL: ${{ inputs.goal }}
+          TARGET_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          {
+            echo 'CURRENT WORKFLOW GOAL — THIS MUST BE FINISHED AND VERIFIED FIRST:'
+            printf '%s\n' "$GOAL"
+            echo
+            echo 'AFTER THE CURRENT GOAL IS VERIFIED COMPLETE OR VERIFIED NO-OP, SELECT THE FIRST UNFINISHED APPLICABLE TASK FROM THIS QUEUE:'
+            case "$TARGET_REPOSITORY" in
+              salamou1944/Easy-)
+                sed -n '/^### P0 — EASY/,/^### P0 — mony/ p' .elite-code-tools/docs/ELITE-TASK-QUEUE.md
+                ;;
+              salamou1944/Salamou-31)
+                sed -n '/^### P1 — Salamou-31/,/^### P1 — agent-skills engineering core/ p' .elite-code-tools/docs/ELITE-TASK-QUEUE.md
+                ;;
+              salamou1944/agent-skills)
+                sed -n '/^### P0 — mony/,/^### P1 — Salamou-31/ p' .elite-code-tools/docs/ELITE-TASK-QUEUE.md
+                sed -n '/^### P1 — agent-skills engineering core/,/^## Advancement rule/ p' .elite-code-tools/docs/ELITE-TASK-QUEUE.md
+                ;;
+              *)
+                echo 'No repository-specific queue section. Continue only the current workflow goal.'
+                ;;
+            esac
+            echo
+            echo 'QUEUE RULE: do not claim completion from commits/plans/workflow success alone. Implement, test, inspect, and verify the resulting capability before advancing.'
+          } | tee /tmp/elite-goal.txt
+
+      - name: Run Elite Code worker
+        id: elite
+        continue-on-error: true
+        env:
+          EASY_OPERATOR_LLM_API_KEY: ${{ secrets.EASY_OPENAI_API_KEY || secrets.OPENAI_API_KEY }}
+          EASY_OPERATOR_LLM_ENDPOINT: ${{ vars.EASY_OPERATOR_LLM_ENDPOINT || 'https://api.openai.com/v1/chat/completions' }}
+          EASY_OPERATOR_LLM_MODEL: ${{ vars.EASY_OPERATOR_LLM_MODEL || 'gpt-4o-mini' }}
+          EASY_OPERATOR_LLM_FALLBACK_MODEL: ${{ vars.EASY_OPERATOR_LLM_FALLBACK_MODEL || '' }}
+          EASY_OPERATOR_SECONDARY_LLM_ENDPOINT: ${{ vars.EASY_OPERATOR_SECONDARY_LLM_ENDPOINT || '' }}
+          EASY_OPERATOR_SECONDARY_LLM_MODEL: ${{ vars.EASY_OPERATOR_SECONDARY_LLM_MODEL || '' }}
+          EASY_OPERATOR_SECONDARY_LLM_API_KEY: ${{ secrets.EASY_OPERATOR_SECONDARY_LLM_API_KEY || '' }}
+          EASY_OPERATOR_GITHUB_MODELS_ENDPOINT: ''
+          EASY_OPERATOR_GITHUB_MODELS_MODEL: ''
+          GITHUB_TOKEN: ${{ github.token }}
+          EASY_OPERATOR_WORKSPACE: ${{ github.workspace }}
+          ARMY_AGENT_SOURCE: .elite-code-tools/.github/agents
+          EASY_OPERATOR_CODER_ATTEMPTS: '2'
+          EASY_OPERATOR_PROVIDER_RETRIES: '2'
+          EASY_OPERATOR_RATE_LIMIT_MAX_WAIT_MS: '15000'
+          EASY_OPERATOR_PROVIDER_TIMEOUT_MS: '45000'
+        run: |
+          node .elite-code-tools/apps/easy-developer-platform/autonomous-coder.mjs "$(cat /tmp/elite-goal.txt)"
+
+      - name: Verify Elite worker result
+        if: steps.elite.outcome == 'success'
+        run: |
+          set -euo pipefail
+          git diff --check
+          node --check .elite-code-tools/apps/easy-developer-platform/autonomous-coder.mjs
+
+      - name: Reset unverified worker changes before fallback
+        if: steps.elite.outcome != 'success'
+        run: |
+          set -euo pipefail
+          git reset --hard HEAD
+          git clean -fd
+          printf '%s\n' '.elite-code-tools/' >> .git/info/exclude
+          printf '%s\n' '.elite/' >> .git/info/exclude
+          git status --porcelain
+          test -z "$(git status --porcelain)"
+
+      - name: Run provider-independent practical fallback as PIPELINE verification only
+        id: fallback
+        if: steps.elite.outcome != 'success'
+        continue-on-error: false
+        env:
+          ARMY_GOAL: ${{ inputs.goal }}
+          ARMY_WORKSPACE: ${{ github.workspace }}
+          ARMY_AGENT_SOURCE: .elite-code-tools/.github/agents
+        run: |
+          set -euo pipefail
+          node .elite-code-tools/apps/easy-developer-platform/army-14-practical-runner.mjs "$ARMY_GOAL" | tee /tmp/army-14-result.json
+          node -e 'const fs=require("fs"); const r=JSON.parse(fs.readFileSync("/tmp/army-14-result.json","utf8")); if(r.status!=="PIPELINE_VERIFIED" || r.soldierCount!==14 || !r.allSoldiersExecuted || !r.allHandoffsVerified || !r.allRoleChecksPassed || r.taskVerified===true) throw new Error("army14_pipeline_gate_failed");'
+
+      - name: Record blocked task evidence without false completion
+        if: steps.fallback.outcome == 'success'
+        run: |
+          set -euo pipefail
+          echo 'ARMY-14 pipeline verification passed.'
+          echo 'Task completion remains BLOCKED because no provider-backed implementation evidence was produced.'
+          echo 'Repository-native verification continues; no completion status is promoted from pipeline evidence.'
+          printf 'BLOCKED_PROVIDER=%s\n' 'llm_provider_not_configured' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify fallback result artifact semantics
+        if: steps.fallback.outcome == 'success'
+        run: |
+          set -euo pipefail
+          git diff --check
+          node --check .elite-code-tools/apps/easy-developer-platform/autonomous-coder.mjs
+          node --check .elite-code-tools/apps/easy-developer-platform/army-14-practical-runner.mjs
+          test -f .elite/army-14/*/manifest.json
+
+      - name: Run repository-native verification
+        run: |
+          git diff --check
+          if [ -f package.json ]; then
+            node -e "const p=require('./package.json'); console.log('scripts:', Object.keys(p.scripts||{}).sort().join(', '))"
+            if node -e "const p=require('./package.json'); process.exit(p.scripts?.test ? 0 : 1)"; then npm test --if-present; fi
+            npm run test:elite:provider-resilience --if-present
+          fi
+
+      - name: Persist verified changes
+        if: steps.elite.outcome == 'success'
+        run: |
+          if ! git diff --quiet || ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add -A -- ':!.elite-code-tools' ':!.elite'
+            git diff --cached --check
+            git commit -m 'chore(supervisor): persist verified engineering result'
+            if [ -n "${PERSIST_BRANCH:-}" ]; then
+              git push origin "HEAD:$PERSIST_BRANCH"
+              echo "Persisted verified worker result to isolated branch $PERSIST_BRANCH"
+            else
+              git fetch origin main
+              git rebase origin/main
+              git push
+            fi
+          fi
+
+      - name: Final evidence summary
+        if: always()
+        run: |
+          echo '## Elite supervisor evidence' >> "$GITHUB_STEP_SUMMARY"
+          echo "- Elite worker: ${{ steps.elite.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ARMY-14 pipeline fallback: ${{ steps.fallback.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f /tmp/army-14-result.json ]; then cat /tmp/army-14-result.json >> "$GITHUB_STEP_SUMMARY"; fi

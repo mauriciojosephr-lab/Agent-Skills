@@ -1,194 +1,103 @@
-# Agent Skills
+# Agent Skills / Elite Engineering Core
 
-A collection of skills for AI coding agents. Skills are packaged instructions and scripts that extend agent capabilities.
+This repository is the engineering core for reusable AI-agent skills, **Elite autonomous coding**, **ARMY-14 verification**, and **MONY / Revenue Engine** automation.
 
-Skills follow the [Agent Skills](https://agentskills.io/) format.
+It started as a skills collection and has evolved into a broader, evidence-driven agent engineering platform.
 
-[![skills.sh](https://skills.sh/b/vercel-labs/agent-skills)](https://skills.sh/vercel-labs/agent-skills)
+## What lives here
 
-## Available Skills
+| Layer | Location | Purpose |
+|---|---|---|
+| Reusable skills | `skills/` | Canonical agent skills and progressive-disclosure instructions |
+| Agent-local catalog | `.agents/` | Agent skill metadata and capability discovery |
+| Elite runtime | `apps/easy-developer-platform/` | Autonomous coding, supervision, repair, and verification |
+| MONY / Revenue Engine | `apps/revenue-engine/` | Revenue discovery, routing, provider adapters, evidence and measurement |
+| ARMY-14 | `.github/agents/` | Canonical 14-soldier profiles and ownership contracts |
+| GitHub automation | `.github/` | CI, agents, prompts, instructions, and orchestration workflows |
+| Shared libraries | `packages/` | Reusable implementation modules |
+| Verification | `eval/` | Evaluation and verification assets |
+| Registry | `registry/` | Capability/skill registry and discovery data |
+| Tooling | `scripts/`, `tools/` | Maintenance, validation, and operator utilities |
+| Documentation | `docs/` | Architecture and operational checkpoints |
 
-### vercel-optimize
+See [`docs/REPOSITORY-STRUCTURE.md`](docs/REPOSITORY-STRUCTURE.md) for the canonical layout and source-of-truth boundaries.
 
-Audits a Vercel project for cost, performance, reliability, caching, function usage, and billing opportunities. It collects Vercel metrics first, then investigates only the routes and files those metrics point to.
+## Engineering contract
 
-**Use when:**
+The repository is designed around evidence-backed completion:
 
-- Optimizing a deployed Vercel project
-- Reducing Vercel costs or function usage
-- Investigating slow or expensive routes
-- Finding caching, ISR, middleware, image, or build-minute issues
-- Producing a ranked cost and performance report
+`requirements → inspect → design → implement → test → adversarial review → repair → verify → evidence`
 
-### react-best-practices
+Elite distinguishes task completion from infrastructure health. In particular, `PIPELINE_VERIFIED` must never be promoted to `TASK_VERIFIED` without task-specific acceptance evidence.
 
-React and Next.js performance optimization guidelines from Vercel Engineering. Contains 40+ rules across 8 categories, prioritized by impact.
+The same fail-closed principle applies to provider reachability, health checks, revenue evidence, and deployment verification.
 
-**Use when:**
+## GitHub + Copilot engineering layer
 
-- Writing new React components or Next.js pages
-- Implementing data fetching (client or server-side)
-- Reviewing code for performance issues
-- Optimizing bundle size or load times
+- `.github/copilot-instructions.md` — repository-wide Copilot rules
+- `.github/instructions/` — security and path-specific rules
+- `.github/agents/` — operator, guardian, verification, and ARMY-14 agent definitions
+- `.github/prompts/` — repeatable audit and verified-change workflows
+- `.agents/skills/github-capability-audit/` — GitHub capability/access audit skill
+- `docs/GITHUB-COPILOT-EXCELLENCE.md` — capability map and engineering guidance
 
-**Categories covered:**
+## MONY / Revenue Engine
 
-- Eliminating waterfalls (Critical)
-- Bundle size optimization (Critical)
-- Server-side performance (High)
-- Client-side data fetching (Medium-High)
-- Re-render optimization (Medium)
-- Rendering performance (Medium)
-- JavaScript micro-optimizations (Low-Medium)
+MONY uses the architecture:
 
-### web-design-guidelines
+`discover → verify → score → route → package → publish → measure → learn`
 
-Review UI code for compliance with web interface best practices. Audits your code for 100+ rules covering accessibility, performance, and UX.
+Only provider-confirmed commission events count as revenue. A configured or reachable affiliate URL is not proof of a click, signup, conversion, commission, or payout.
 
-**Use when:**
+The canonical machine-readable MONY state lives in the separate `AI_operating_memory` repository. The local checkpoint in `docs/PROJECT-STATE-MONY.md` is an engineering snapshot, not a competing state store.
 
-- "Review my UI"
-- "Check accessibility"
-- "Audit design"
-- "Review UX"
-- "Check my site against best practices"
+## AI Automation & API Engineering Services
 
-**Categories covered:**
+**From manual process to working automation.**
 
-- Accessibility (aria-labels, semantic HTML, keyboard handlers)
-- Focus States (visible focus, focus-visible patterns)
-- Forms (autocomplete, validation, error handling)
-- Animation (prefers-reduced-motion, compositor-friendly transforms)
-- Typography (curly quotes, ellipsis, tabular-nums)
-- Images (dimensions, lazy loading, alt text)
-- Performance (virtualization, layout thrashing, preconnect)
-- Navigation & State (URL reflects state, deep-linking)
-- Dark Mode & Theming (color-scheme, theme-color meta)
-- Touch & Interaction (touch-action, tap-highlight)
-- Locale & i18n (Intl.DateTimeFormat, Intl.NumberFormat)
+The repository supports implementation, repair, and integration work for:
 
-### writing-guidelines
+- n8n workflow automation
+- AI agents and business-process automation
+- WhatsApp lead qualification and human handoff
+- CRM integrations and synchronization
+- REST API and webhook integrations
+- Document and data automation
+- Reliability hardening and monitoring
+- Rapid MVP and production implementation
 
-Review docs and prose for compliance with the Vercel writing handbook. Audits your pages for 80+ rules covering voice, structure, content types, code samples, typography, and AI workflow.
+**Contact:** easy@agentmail.to
 
-**Use when:**
+**Service details:** [`SERVICES.md`](SERVICES.md)
 
-- "Review my docs"
-- "Check writing style"
-- "Audit prose"
-- "Review docs voice and tone"
-- "Check this page against the writing handbook"
+## Skill development standard
 
-**Categories covered:**
+Each reusable skill follows a predictable structure:
 
-- Planning (content plan, content type, user-shaped titles)
-- Voice & tone (active voice, direct address, banned words like `easy`/`simple`/`quick`)
-- Tone by content type (tutorial, how-to, reference, conceptual, troubleshooting)
-- Headings & structure (sentence case, descriptive subheadings, TL;DR opens)
-- Lists (when to use, bold/description format)
-- Code (language tags, TypeScript first, `<Steps/>`, 80-col / 25-line limits)
-- Placeholders, units, & numbers (`snake_case` text, count-up numbers, `64 KB`/`200 ms`)
-- Typography (no em dashes as punctuation, curly quotes, ellipsis character, non-breaking spaces)
-- Source formatting (no hard-wrap, no `---` rules, blank line discipline)
-- Pricing & money pages (tables, uncompromising detail)
-- AI workflow (accountability, enterprise models, plan first, disclose AI use)
-- Review (PR description discipline, author accountability)
-
-### react-native-guidelines
-
-React Native best practices optimized for AI agents. Contains 16 rules across 7 sections covering performance, architecture, and platform-specific patterns.
-
-**Use when:**
-
-- Building React Native or Expo apps
-- Optimizing mobile performance
-- Implementing animations or gestures
-- Working with native modules or platform APIs
-
-**Categories covered:**
-
-- Performance (Critical) - FlashList, memoization, heavy computation
-- Layout (High) - flex patterns, safe areas, keyboard handling
-- Animation (High) - Reanimated, gesture handling
-- Images (Medium) - expo-image, caching, lazy loading
-- State Management (Medium) - Zustand patterns, React Compiler
-- Architecture (Medium) - monorepo structure, imports
-- Platform (Medium) - iOS/Android specific patterns
-
-### react-view-transitions
-
-Implement smooth, native-feeling animations using React's View Transition API. Covers the `<ViewTransition>` component, `addTransitionType`, transition types, and Next.js integration including the `transitionTypes` prop on `next/link`.
-
-**Use when:**
-
-- Adding page transitions or route animations
-- Animating enter/exit of components
-- Creating shared element transitions (list-to-detail morphing)
-- Implementing directional (forward/back) navigation animations
-- Integrating view transitions in Next.js App Router
-- Animating list reorder or Suspense fallback reveals
-
-**Topics covered:**
-
-- `<ViewTransition>` component (enter, exit, update, share triggers)
-- `addTransitionType` for directional/context-specific animations
-- View Transition Classes and CSS pseudo-elements
-- Shared element transitions with the `name` prop
-- JavaScript animations via Web Animations API
-- Next.js `transitionTypes` prop on `next/link`
-- Ready-to-use CSS animation recipes (fade, slide, scale, flip)
-- Accessibility (`prefers-reduced-motion`)
-
-### composition-patterns
-
-React composition patterns that scale. Helps avoid boolean prop proliferation through compound components, state lifting, and internal composition.
-
-**Use when:**
-
-- Refactoring components with many boolean props
-- Building reusable component libraries
-- Designing flexible APIs
-- Reviewing component architecture
-
-**Patterns covered:**
-
-- Extracting compound components
-- Lifting state to reduce props
-- Composing internals for flexibility
-- Avoiding prop drilling
-
-### vercel-deploy-claimable
-
-Deploy applications and websites to Vercel instantly. Designed for use with claude.ai and Claude Desktop to enable deployments directly from conversations. Deployments are "claimable" - users can transfer ownership to their own Vercel account.
-
-**Use when:**
-
-- "Deploy my app"
-- "Deploy this to production"
-- "Push this live"
-- "Deploy and give me the link"
-
-**Features:**
-
-- Auto-detects 40+ frameworks from `package.json`
-- Returns preview URL (live site) and claim URL (transfer ownership)
-- Handles static HTML projects automatically
-- Excludes `node_modules` and `.git` from uploads
-
-**How it works:**
-
-1. Packages your project into a tarball
-2. Detects framework (Next.js, Vite, Astro, etc.)
-3. Uploads to deployment service
-4. Returns preview URL and claim URL
-
-**Output:**
-
+```text
+skills/
+└── <skill-name>/
+    ├── SKILL.md
+    ├── scripts/       # optional
+    ├── references/    # optional
+    └── lib/           # optional
 ```
-Deployment successful!
 
-Preview URL: https://skill-deploy-abc123.vercel.app
-Claim URL:   https://vercel.com/claim-deployment?code=...
+Conventions:
+
+- Skill directories use `kebab-case`.
+- The entry file is exactly `SKILL.md`.
+- Load detailed references progressively instead of bloating `SKILL.md`.
+- Scripts fail closed when required evidence is missing.
+- Human-readable status belongs on stderr; machine-readable JSON belongs on stdout.
+
+## Discovery index
+
+Changes to skills on `main` publish an immutable GitHub release with an Agent Skills discovery index and one artifact per skill. Build locally with:
+
+```bash
+npm ci --ignore-scripts
+node scripts/build-discovery-index.mjs https://example.com/skills
 ```
 
 ## Installation
@@ -197,42 +106,21 @@ Claim URL:   https://vercel.com/claim-deployment?code=...
 npx skills add vercel-labs/agent-skills
 ```
 
-## Usage
+## Verification before completion
 
-Skills are automatically available once installed. The agent will use them when relevant tasks are detected.
+Before claiming a change is complete:
 
-**Examples:**
+1. Re-read the applicable repository rules.
+2. Inspect changed files and the resulting diff.
+3. Run syntax/tests or the strongest repository-native checks available.
+4. Confirm task-specific acceptance evidence.
+5. Record unresolved limitations instead of converting infrastructure success into a completion claim.
 
-```
-Deploy my app
-```
+## Security
 
-```
-Review this React component for performance issues
-```
+Never commit secrets, credentials, tokens, private keys, or live affiliate URLs. Do not bypass authentication, quotas, rate limits, CAPTCHA/MFA, or provider protections.
 
-```
-Help me optimize this Next.js page
-```
-
-## Discovery index
-
-Every change to a skill on `main` publishes an immutable GitHub release with
-an Agent Skills discovery index and one artifact per skill. Build the same
-artifacts locally with:
-
-```bash
-npm ci --ignore-scripts
-node scripts/build-discovery-index.mjs https://example.com/skills
-```
-
-## Skill Structure
-
-Each skill contains:
-
-- `SKILL.md` - Instructions for the agent
-- `scripts/` - Helper scripts for automation (optional)
-- `references/` - Supporting documentation (optional)
+See [`SECURITY.md`](SECURITY.md) for the security policy.
 
 ## License
 

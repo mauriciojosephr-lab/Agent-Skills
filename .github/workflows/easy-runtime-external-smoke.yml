@@ -1,0 +1,61 @@
+name: EASY Runtime External Smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+# External availability is a deployment signal, not a code-change gate.
+# It therefore runs on a bounded health cadence instead of turning every source
+# commit into a red build when Railway is sleeping, redeploying, or unavailable.
+permissions:
+  contents: read
+
+jobs:
+  external-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Resolve runtime endpoint
+        id: endpoint
+        env:
+          BASE: ${{ vars.EASY_RUNTIME_BASE_URL || 'https://easy-platform-runtime-v3-production.up.railway.app' }}
+        run: echo "base=$BASE" >> "$GITHUB_OUTPUT"
+
+      - name: Check public gateway
+        env:
+          BASE: ${{ steps.endpoint.outputs.base }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 15 "$BASE/api/gateway/status" | tee gateway.json
+          node -e 'const x=require("./gateway.json"); const required=["platformOnline","operatorOnline","creativeOnline","creativeJobOnline","customerOnline","revenueOnline"]; if(required.some(k=>x[k]!==true)) process.exit(1)'
+
+      - name: Check public operator health
+        env:
+          BASE: ${{ steps.endpoint.outputs.base }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 15 "$BASE/api/operator/health" | tee operator.json
+          node -e 'const x=require("./operator.json"); if(x.ok!==true) process.exit(1)'
+
+      - name: Check deployed runtime provenance
+        env:
+          BASE: ${{ steps.endpoint.outputs.base }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 15 "$BASE/api/gateway/provenance" | tee provenance.json
+          node -e 'const x=require("./provenance.json"); if(!x || typeof x!=="object") process.exit(1); if(x.runtimeIdentity===undefined && x.deploymentId===undefined && x.commitSha===undefined) process.exit(1); console.log(JSON.stringify({provenanceVerified:true}))'
+
+      - name: Create and execute safe operator task
+        env:
+          BASE: ${{ steps.endpoint.outputs.base }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 15 -X POST "$BASE/api/operator/tasks" \
+            -H 'content-type: application/json' \
+            --data '{"goal":"Inspect the deployed EASY runtime safely and verify its workspace without making external changes.","project":"apps/easy-developer-platform"}' | tee task.json
+          node -e 'const x=require("./task.json"); if(x.status!=="QUEUED") process.exit(1)'
+          curl --fail --silent --show-error --max-time 30 -X POST "$BASE/api/operator/run-once" \
+            -H 'content-type: application/json' \
+            --data '{"project":"apps/easy-developer-platform"}' | tee run.json
+          node -e 'const x=require("./run.json"); const s=x.result?.status||x.status; if(!["VERIFIED","BLOCKED","FAILED"].includes(s)) process.exit(1); console.log(JSON.stringify({operatorRunStatus:s}))'

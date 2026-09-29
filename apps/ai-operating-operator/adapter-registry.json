@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "policy": "Only registered adapters may execute remote task actions.",
+  "adapters": {
+    "security.network.nmap": {
+      "module": "./adapters/nmap-adapter.mjs",
+      "status": "ADAPTER_READY",
+      "independentVerifier": "nmap-independent-verifier-v1",
+      "scope": "explicit target allowlist"
+    },
+    "platform.github": {
+      "module": "./adapters/github-adapter.mjs",
+      "status": "ADAPTER_READY",
+      "independentVerifier": "github-independent-verifier-v1",
+      "scope": "explicit repository allowlist + task write authorization"
+    },
+    "platform.http": {
+      "status": "ADAPTER_READY",
+      "module": "./adapters/http-adapter.mjs",
+      "independentVerifier": "http-independent-verifier-v1",
+      "scope": "HTTPS hosts explicitly allowlisted by OPERATOR_ALLOWED_API_HOSTS"
+    },
+    "research.search": {
+      "module": "./adapters/research-adapter.mjs",
+      "status": "ADAPTER_READY",
+      "independentVerifier": "research-independent-verifier-v1",
+      "scope": "configured SearXNG endpoint; search only"
+    },
+    "research.read": {
+      "module": "./adapters/research-adapter.mjs",
+      "status": "ADAPTER_READY",
+      "independentVerifier": "research-independent-verifier-v1",
+      "scope": "configured Jina Reader endpoint; URL read only"
+    },
+    "browser.automation": {
+      "module": "./adapters/browser-adapter.mjs",
+      "status": "ADAPTER_READY",
+      "independentVerifier": "browser-independent-verifier-v1",
+      "scope": "configured browser endpoint; bounded read/verify actions only"
+    },
+    "platform.cua.driver": {
+      "module": "./adapters/cua-adapter.mjs",
+      "status": "ADAPTER_READY",
+      "independentVerifier": "cua-independent-verifier-v1",
+      "scope": "explicit Cua endpoint + safe read-only action allowlist"
+    },
+    "ai.local.ollama": {
+      "module": "./adapters/ollama-adapter.mjs",
+      "status": "ADAPTER_READY",
+      "independentVerifier": "ollama-independent-verifier-v1",
+      "scope": "localhost by default; remote requires HTTPS"
+    },
+    "workspace.recovery": {
+      "module": "./adapters/workspace-adapter.mjs",
+      "status": "ADAPTER_READY",
+      "independentVerifier": "workspace-independent-verifier-v1",
+      "scope": "explicit OPERATOR_WORKSPACE_ROOT + workspace_read authorization"
+    },
+    "research.api_catalog": {
+      "module": "./adapters/api-catalog-adapter.mjs",
+      "status": "ADAPTER_READY",
+      "independentVerifier": "api-catalog-independent-verifier-v1",
+      "scope": "read-only curated OpenClaw API catalog; explicit api_catalog_read authorization"
+    },
+    "mcp.openapi_bridge": {
+      "module": "./adapters/openapi-mcp-adapter.mjs",
+      "status": "ADAPTER_READY",
+      "independentVerifier": "openapi-mcp-independent-verifier-v1",
+      "scope": "inline OpenAPI document; explicit openapi_mcp_read authorization; HTTPS server hosts only when allowlisted"
+    },
+    "mcp.gateway": {
+      "module": "./adapters/mcp-adapter.mjs",
+      "status": "ADAPTER_READY",
+      "independentVerifier": "mcp-independent-verifier-v1",
+      "scope": "explicit OPERATOR_MCP_URL + mcp_read authorization; safe health/list_tools/call_tool only"
+    },
+    "research.capability_sources": {
+      "module": "./adapters/capability-sources-adapter.mjs",
+      "status": "ADAPTER_READY",
+      "independentVerifier": "capability-sources-independent-verifier-v1",
+      "scope": "read-only pinned five-source capability corpus; explicit capability_sources_read authorization"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+name: elite-dna-verification
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --check apps/easy-developer-platform/elite-dna.mjs
+      - run: node --check apps/easy-developer-platform/elite-engine.mjs
+      - run: npm run test:elite:soldiers
+      - run: npm run test:elite:field-exercise
+      - run: npm run test:elite:dna
+      - run: npm run test:elite:harness
+      - run: npm run test:elite:engine
+      - run: npm run test:elite:provider-resilience
+      - run: npm run test:elite
+      - run: npm run test:elite:queue
+      - run: npm run test:revenue:all
+      - run: npm run revenue:doctor

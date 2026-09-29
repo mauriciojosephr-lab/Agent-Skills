@@ -1,0 +1,226 @@
+name: elite-code-background-supervisor
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "*/5 * * * *"
+
+concurrency:
+  group: elite-monorepo-state
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  copilot-requests: write
+
+jobs:
+  supervise:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Install existing dependencies
+        run: npm ci --ignore-scripts
+      - name: Run supervisor evidence check
+        continue-on-error: true
+        env:
+          SUPERVISOR_REPORT_PATH: /tmp/supervisor-progress.json
+        run: node skills/code-progress-supervisor/scripts/check-progress.mjs
+      - name: Upload supervisor evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: elite-code-supervisor-evidence-${{ github.run_id }}
+          path: /tmp/supervisor-progress.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Build safe fallback context
+        run: |
+          : > /tmp/elite-code-context.txt
+          for file in \
+            CORE-RULES.md \
+            docs/ELITE-TASK-QUEUE.md \
+            skills/elite-code-engineer/SKILL.md \
+            skills/code-progress-supervisor/SKILL.md \
+            apps/easy-developer-platform/autonomous-coder.mjs \
+            apps/easy-developer-platform/project-queue-orchestrator.mjs \
+            apps/easy-developer-platform/run-project-queue-cycle.mjs \
+            package.json; do
+            if [ -f "$file" ]; then
+              printf '\n--- %s ---\n' "$file" >> /tmp/elite-code-context.txt
+              sed -n '1,320p' "$file" >> /tmp/elite-code-context.txt
+            fi
+          done
+      - name: Run primary Elite Code engineering cycle
+        id: primary
+        continue-on-error: true
+        env:
+          EASY_OPERATOR_LLM_API_KEY: ${{ secrets.EASY_OPENAI_API_KEY || secrets.OPENAI_API_KEY }}
+          EASY_OPERATOR_LLM_ENDPOINT: ${{ vars.EASY_OPERATOR_LLM_ENDPOINT || 'https://api.openai.com/v1/chat/completions' }}
+          EASY_OPERATOR_LLM_MODEL: ${{ vars.EASY_OPERATOR_LLM_MODEL || 'gpt-4o-mini' }}
+          EASY_OPERATOR_LLM_FALLBACK_MODEL: ${{ vars.EASY_OPERATOR_LLM_FALLBACK_MODEL || '' }}
+          EASY_OPERATOR_SECONDARY_LLM_API_KEY: ${{ secrets.EASY_OPERATOR_SECONDARY_LLM_API_KEY || secrets.EASY_SECONDARY_LLM_API_KEY || '' }}
+          EASY_OPERATOR_SECONDARY_LLM_ENDPOINT: ${{ vars.EASY_OPERATOR_SECONDARY_LLM_ENDPOINT || vars.EASY_SECONDARY_LLM_ENDPOINT || '' }}
+          EASY_OPERATOR_SECONDARY_LLM_MODEL: ${{ vars.EASY_OPERATOR_SECONDARY_LLM_MODEL || vars.EASY_SECONDARY_LLM_MODEL || '' }}
+          EASY_OPERATOR_PROVIDER_TIMEOUT_MS: "45000"
+          EASY_OPERATOR_PROVIDER_RETRIES: "2"
+          EASY_OPERATOR_RATE_LIMIT_MAX_WAIT_MS: "15000"
+          EASY_OPERATOR_WORKSPACE: ${{ github.workspace }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node apps/easy-developer-platform/autonomous-coder.mjs "Improve Elite Code autonomous engineering reliability using the verified repository state, tests, and rules. Do not edit workflows, secrets, deployment configuration, authentication policy, or protected paths. Make the smallest safe verified change; return VERIFIED_NOOP when no justified change exists." | tee /tmp/elite-primary-result.json
+          node apps/easy-developer-platform/task-result-gate.mjs "$(cat /tmp/elite-primary-result.json)"
+      - name: Install Copilot CLI recovery
+        if: steps.primary.outcome != 'success'
+        continue-on-error: true
+        run: npm install -g @github/copilot
+      - name: Run independent Elite Code recovery
+        id: recovery
+        if: steps.primary.outcome != 'success'
+        continue-on-error: true
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=15s 120s copilot -s --no-ask-user -p "$(cat .github/prompts/elite-code-copilot-fallback.txt /tmp/elite-code-context.txt)" > /tmp/elite-code-recovery-plan.raw
+          node <<'NODE'
+          const fs = require('node:fs');
+          const raw = fs.readFileSync('/tmp/elite-code-recovery-plan.raw', 'utf8').replace(/^\uFEFF/, '').trim();
+          const tryParse = (value) => { try { return JSON.parse(value); } catch { return null; } };
+          let parsed = tryParse(raw);
+          if (!parsed) {
+            for (let start = 0; start < raw.length && !parsed; start += 1) {
+              if (raw[start] !== '{') continue;
+              let depth = 0, inString = false, escaped = false;
+              for (let i = start; i < raw.length; i += 1) {
+                const ch = raw[i];
+                if (inString) {
+                  if (escaped) escaped = false;
+                  else if (ch === '\\') escaped = true;
+                  else if (ch === '"') inString = false;
+                  continue;
+                }
+                if (ch === '"') { inString = true; continue; }
+                if (ch === '{') depth += 1;
+                else if (ch === '}') {
+                  depth -= 1;
+                  if (depth === 0) { parsed = tryParse(raw.slice(start, i + 1)); break; }
+                }
+              }
+            }
+          }
+          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            console.error('Copilot recovery response did not contain a valid JSON object.');
+            process.exit(1);
+          }
+          fs.writeFileSync('/tmp/elite-code-recovery-plan.json', JSON.stringify(parsed, null, 2) + '\n');
+          NODE
+          echo 'response-file=/tmp/elite-code-recovery-plan.json' >> "$GITHUB_OUTPUT"
+      - name: Apply verified recovery plan
+        if: steps.primary.outcome != 'success' && steps.recovery.outcome == 'success'
+        env:
+          EASY_OPERATOR_PLAN_FILE: ${{ steps.recovery.outputs.response-file }}
+          EASY_OPERATOR_WORKSPACE: ${{ github.workspace }}
+          EASY_OPERATOR_PROVIDER_TIMEOUT_MS: "45000"
+          EASY_OPERATOR_RATE_LIMIT_MAX_WAIT_MS: "15000"
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node apps/easy-developer-platform/autonomous-coder.mjs "Apply the verified recovery plan for the Elite Code engineering cycle." | tee /tmp/elite-recovery-result.json
+          node apps/easy-developer-platform/task-result-gate.mjs "$(cat /tmp/elite-recovery-result.json)"
+      - name: Execute next verified project-queue mission
+        id: queue
+        if: steps.primary.outcome == 'success' || steps.recovery.outcome == 'success'
+        continue-on-error: true
+        env:
+          ELITE_QUEUE_STATE: .easy/project-queue-state.json
+          EASY_OPERATOR_LLM_API_KEY: ${{ secrets.EASY_OPENAI_API_KEY || secrets.OPENAI_API_KEY }}
+          EASY_OPERATOR_LLM_ENDPOINT: ${{ vars.EASY_OPERATOR_LLM_ENDPOINT || 'https://api.openai.com/v1/chat/completions' }}
+          EASY_OPERATOR_LLM_MODEL: ${{ vars.EASY_OPERATOR_LLM_MODEL || 'gpt-4o-mini' }}
+          EASY_OPERATOR_LLM_FALLBACK_MODEL: ${{ vars.EASY_OPERATOR_LLM_FALLBACK_MODEL || '' }}
+          EASY_OPERATOR_SECONDARY_LLM_API_KEY: ${{ secrets.EASY_OPERATOR_SECONDARY_LLM_API_KEY || secrets.EASY_SECONDARY_LLM_API_KEY || '' }}
+          EASY_OPERATOR_SECONDARY_LLM_ENDPOINT: ${{ vars.EASY_OPERATOR_SECONDARY_LLM_ENDPOINT || vars.EASY_SECONDARY_LLM_ENDPOINT || '' }}
+          EASY_OPERATOR_SECONDARY_LLM_MODEL: ${{ vars.EASY_OPERATOR_SECONDARY_LLM_MODEL || vars.EASY_SECONDARY_LLM_MODEL || '' }}
+          EASY_OPERATOR_WORKSPACE: ${{ github.workspace }}
+          GITHUB_TOKEN: ${{ github.token }}
+          ARMY14_SOLDIER_ID: ${{ steps.queue.outputs.soldier_id || '' }}
+        run: |
+          set +e
+          node apps/easy-developer-platform/run-project-queue-cycle.mjs | tee /tmp/project-queue-cycle.json
+          status=$?
+          if [ -f /tmp/project-queue-cycle.json ]; then
+            echo "queue-status=$(node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('/tmp/project-queue-cycle.json','utf8'));process.stdout.write(x.status||'UNKNOWN')" 2>/dev/null || echo UNKNOWN)" >> "$GITHUB_OUTPUT"
+          fi
+          exit $status
+
+      - name: Run Elite Code contract tests
+        if: steps.primary.outcome == 'success' || steps.recovery.outcome == 'success'
+        run: |
+          npm run test:elite
+          npm run test:elite:provider-ladder --if-present
+          npm run test:elite:provider-resilience --if-present
+          node --test apps/easy-developer-platform/task-result-gate.test.mjs
+      - name: Verify repository after autonomous cycle
+        if: steps.primary.outcome == 'success' || steps.recovery.outcome == 'success'
+        run: |
+          git diff --check
+          node --check apps/easy-developer-platform/autonomous-coder.mjs
+          node --check apps/easy-developer-platform/task-result-gate.mjs
+          node --check apps/easy-developer-platform/operator-worker.mjs
+          npm run test:elite:provider-resilience --if-present
+          npm run test:elite
+      - name: Verify provider-independent safe no-op
+        id: noop
+        if: steps.primary.outcome != 'success' && steps.recovery.outcome != 'success'
+        run: |
+          set -euo pipefail
+          echo "No provider completed; validating a safe, evidence-backed no-op instead of fabricating progress."
+          git diff --check
+          node --check apps/easy-developer-platform/autonomous-coder.mjs
+          node --check apps/easy-developer-platform/task-result-gate.mjs
+          node --check apps/easy-developer-platform/operator-worker.mjs
+          node --test apps/easy-developer-platform/test-elite-provider-ladder.mjs
+          node --test apps/easy-developer-platform/task-result-gate.test.mjs
+          npm run test:elite:provider-resilience --if-present
+          npm run test:elite
+          test -z "$(git status --porcelain)"
+          echo "VERIFIED_NOOP: provider-unavailable state is safe and regression-free."
+      - name: Persist verified Elite Code progress
+        if: steps.primary.outcome == 'success' || steps.recovery.outcome == 'success'
+        run: |
+          set -euo pipefail
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git diff --cached --check
+            git commit -m "chore(elite): persist verified engineering progress"
+            for attempt in 1 2 3; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                git fetch origin main
+                test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+                exit 0
+              fi
+              git rebase --abort || true
+              sleep $((attempt * 3))
+            done
+            echo 'Failed to persist verified Elite progress after 3 synchronized retries.'
+            exit 1
+          fi
+      - name: Fail if no verified provider completed or safe no-op completed
+        if: steps.primary.outcome != 'success' && steps.recovery.outcome != 'success' && steps.noop.outcome != 'success'
+        run: |
+          echo "Elite Code did not obtain a verified engineering plan and could not establish a safe no-op."
+          exit 1

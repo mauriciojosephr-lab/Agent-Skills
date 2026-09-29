@@ -1,0 +1,67 @@
+# Capability sources — 2026-09-26
+
+This file records sources to mine for implementation patterns. It is not proof that a source is integrated.
+
+## Existing collection sources
+- Project-/COLLECTION: canonical collection index and provenance graph.
+- aw-junaid: 33 repositories.
+- mufeedvh: 43 repositories.
+- Panniantong: 38 repositories.
+- Nmap ecosystem: 7 repositories.
+- Weekly Top Five.
+- Agent Reach families.
+- mnfst/awesome-free-llm-apis.
+
+## Additional GitHub sources discovered during the operator build
+- incline-ltd/awesome-agentic-engineering — agent workflows, MCP, verification, sandboxing, security patterns.
+- uber/ADR — agent discovery, telemetry, benchmark and defensive detection.
+- msoedov/agentic_security — LLM/agent vulnerability scanning and red-team evaluation.
+- secureagentics/Adrian — runtime agent monitoring and intervention patterns.
+- github/gh-aw — GitHub-native agentic workflows with sandboxing, scoped permissions, gated outputs and cost controls.
+- cohaaan/all-agentic-coding-tools — landscape of coding agents and capability dimensions.
+- Ryvos/ryvos — self-hosted agent runtime with tools, DAG orchestration, MCP and sandboxing.
+- Corvidae-Coding-Projects/OpenClaudia — agent harness/provider/session/tool/review architecture; treat its own audit warnings as evidence that presence is not readiness.
+
+## Collection-derived implementation families
+Research/search: SearXNG, Jina Reader, Firecrawl, Crawl4AI, Scrapy.
+Browser: Playwright, Browser Use, Writ, WebOperator, WebNav, AgentBrowser.
+Documents: Docling, OCRmyPDF, Tesseract.
+AI runtime: Ollama, llama.cpp, vLLM, LocalAI, LiteLLM, Open WebUI.
+Automation: n8n, Activepieces, Windmill, Temporal, Airflow, Dagster, Kestra, Huginn.
+Security: Nmap, Trivy, OSV-Scanner, Grype, Syft, Semgrep, Gitleaks, Wazuh, Suricata, Zeek.
+Observability: OpenTelemetry, SigNoz, Prometheus, Grafana, Uptime Kuma.
+Storage/data: MinIO, SeaweedFS, Garage, Qdrant and other collection-indexed stores.
+Commerce/support: Medusa, Saleor, Vendure, Chatwoot, Zammad, Twenty, EspoCRM, SuiteCRM.
+Networking: Headscale, NetBird, Caddy, Traefik, HAProxy, Nginx.
+
+## Promotion rule
+A source becomes an Operator capability only after:
+1. source/revision is recorded;
+2. license/dependency/cost boundary is known;
+3. implementation is inspected;
+4. adapter contract is defined;
+5. local fixture or runtime test passes;
+6. health/reachability is measured;
+7. independent verification evidence exists.
+
+Never equate a catalog entry, star count, README claim or Top Five membership with operational capability.
+
+- multica-ai/multica — agent workspace/runtime/task-routing patterns: agent identity, runtime separation, durable runs, review gates, skills, access scopes, autopilot scheduling. Source inspection completed; license boundary requires exact LICENSE review before code reuse.
+
+- rohitg00/ai-engineering-from-scratch — 20-phase AI engineering curriculum, 523 lessons, runnable artifacts, focused MCP/Agent Skills routes, agent-assisted engineering, production AI, safety, and capstone implementations. MIT license verified from LICENSE. Use as a knowledge/pattern source; do not equate curriculum completion with operational capability.
+
+- trycua/cua — computer-use infrastructure: Cua Driver (MCP/CLI/SDK), isolated sandboxes/fleets, Lume VMs, Cua Bench, CUA-S1. MIT core license verified; optional perception/OmniParser/Ultralytics components have separate AGPL/CC-BY boundaries. Use as a scoped GUI capability source, never as unrestricted desktop authority.
+
+- cporter202/openclaw-api-list — agent-callable API/MCP discovery catalog. Focus and curated-list files inspected 2026-09-27. High-value patterns: API→capability discovery, bounded OpenAPI→MCP generation, MCP as transport, free/self-hosted-first selection. Catalog entries are discovery only; provider ownership, license, cost, security and runtime must be independently verified.
+
+- ruvnet/ruflo — agent meta-harness: swarm/orchestration, adaptive planning, persistent memory, model routing, hooks, security/readiness audits, and witness/receipt verification. MIT license verified. Inspected 2026-09-27. High-value patterns captured in Project-/COLLECTION/AI/RUFLO_CAPTURE_2026-09-27.md. Use as architecture/pattern source; do not equate Ruflo features with operator capability until independently tested.
+
+## AI Bot primary capability-source set — 2026-09-27
+Pinned sources for the AI Bot:
+- Agent Zero: `agent0ai/agent-zero@e3051fb584b1a36be2b0a0c90606f1c2c2d356ec`
+- OpenClaw API List: `cporter202/openclaw-api-list@3afa19dd12f3cdc6bc2e297e9b6945059ada0cae`
+- agentic-ai-apis: `cporter202/agentic-ai-apis@64459d7bc2887f034ae5588d9bbd03e3c1d3c5a4`
+- AI Engineering From Scratch: `rohitg00/ai-engineering-from-scratch@968da0791b83917c9d8a5ba197ff190fa0b24093`
+- awesome-free-llm-apis: `mnfst/awesome-free-llm-apis@167013ff729e30f3a92bb8d416062d6c34a84507`
+
+These are read-only discovery inputs. They do not confer provider access.

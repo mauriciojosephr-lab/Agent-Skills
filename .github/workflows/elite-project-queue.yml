@@ -1,0 +1,164 @@
+name: elite-project-queue
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "*/5 * * * *"
+
+concurrency:
+  group: elite-monorepo-state
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  models: read
+  copilot-requests: write
+
+jobs:
+  execute-next:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Cache installed dependencies
+        id: node_modules_cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: elite-project-queue-node22-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            elite-project-queue-node22-${{ runner.os }}-
+
+      - name: Install dependencies
+        if: steps.node_modules_cache.outputs.cache-hit != 'true'
+        run: npm ci --ignore-scripts
+
+      - name: Verify queue contract
+        run: npm run test:elite:queue
+
+      - name: Execute next verified mony task
+        id: cycle
+        continue-on-error: true
+        env:
+          EASY_OPERATOR_LLM_API_KEY: ${{ secrets.EASY_OPENAI_API_KEY || secrets.OPENAI_API_KEY }}
+          EASY_OPERATOR_LLM_ENDPOINT: ${{ vars.EASY_OPERATOR_LLM_ENDPOINT || 'https://api.openai.com/v1/chat/completions' }}
+          EASY_OPERATOR_LLM_MODEL: ${{ vars.EASY_OPERATOR_LLM_MODEL || 'gpt-4o-mini' }}
+          EASY_OPERATOR_LLM_FALLBACK_MODEL: ${{ vars.EASY_OPERATOR_LLM_FALLBACK_MODEL || '' }}
+          EASY_OPERATOR_SECONDARY_LLM_API_KEY: ${{ secrets.EASY_SECONDARY_LLM_API_KEY || '' }}
+          EASY_OPERATOR_SECONDARY_LLM_ENDPOINT: ${{ vars.EASY_SECONDARY_LLM_ENDPOINT || '' }}
+          EASY_OPERATOR_SECONDARY_LLM_MODEL: ${{ vars.EASY_SECONDARY_LLM_MODEL || '' }}
+          EASY_OPERATOR_GITHUB_MODELS_ENDPOINT: ${{ vars.EASY_OPERATOR_GITHUB_MODELS_ENDPOINT || '' }}
+          EASY_OPERATOR_GITHUB_MODELS_MODEL: ${{ vars.EASY_OPERATOR_GITHUB_MODELS_MODEL || 'openai/gpt-4o-mini' }}
+          EASY_OPERATOR_PROVIDER_TIMEOUT_MS: "45000"
+          EASY_OPERATOR_PROVIDER_RETRIES: "3"
+          EASY_OPERATOR_RATE_LIMIT_MAX_WAIT_MS: "120000"
+          GITHUB_TOKEN: ${{ github.token }}
+          EASY_OPERATOR_WORKSPACE: ${{ github.workspace }}
+          ELITE_QUEUE_STATE: .easy/project-queue-state.json
+        run: |
+          set +e
+          node apps/easy-developer-platform/run-project-queue-cycle.mjs 2>&1 | tee /tmp/elite-cycle-result.txt
+          status=${PIPESTATUS[0]}
+          echo "cycle_exit_code=$status" >> /tmp/elite-cycle-result.txt
+          exit "$status"
+
+      - name: Build independent queue recovery context
+        if: steps.cycle.conclusion != 'success'
+        run: |
+          : > /tmp/elite-queue-context.txt
+          printf '\n--- exact failed cycle output ---\n' >> /tmp/elite-queue-context.txt
+          sed -n '1,240p' /tmp/elite-cycle-result.txt >> /tmp/elite-queue-context.txt || true
+          for file in \
+            docs/ELITE-TASK-QUEUE.md \
+            apps/easy-developer-platform/project-queue-orchestrator.mjs \
+            apps/easy-developer-platform/run-project-queue-cycle.mjs \
+            apps/easy-developer-platform/autonomous-coder.mjs \
+            .easy/project-queue-state.json \
+            package.json; do
+            if [ -f "$file" ]; then
+              printf '\n--- %s ---\n' "$file" >> /tmp/elite-queue-context.txt
+              sed -n '1,320p' "$file" >> /tmp/elite-queue-context.txt
+            fi
+          done
+
+      - name: Install Copilot CLI recovery
+        if: steps.cycle.conclusion != 'success'
+        continue-on-error: true
+        run: npm install -g @github/copilot
+
+      - name: Run independent queue recovery
+        id: recovery
+        if: steps.cycle.conclusion != 'success'
+        continue-on-error: true
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN || github.token }}
+        run: |
+          timeout --signal=TERM --kill-after=15s 120s copilot -s --no-ask-user -p "$(cat .github/prompts/elite-queue-copilot-fallback.txt /tmp/elite-queue-context.txt)" > /tmp/elite-queue-recovery-plan.raw
+          node <<'NODE'
+          const fs = require('fs');
+          const raw = fs.readFileSync('/tmp/elite-queue-recovery-plan.raw', 'utf8').replace(/^\uFEFF/, '').trim();
+          const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+          let parsed;
+          try { parsed = JSON.parse(cleaned); }
+          catch {
+            const start = cleaned.indexOf('{');
+            const end = cleaned.lastIndexOf('}');
+            if (start < 0 || end <= start) throw new Error('recovery_plan_not_json');
+            parsed = JSON.parse(cleaned.slice(start, end + 1));
+          }
+          if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.changes) || typeof parsed.summary !== 'string') throw new Error('recovery_plan_invalid_shape');
+          fs.writeFileSync('/tmp/elite-queue-recovery-plan.json', JSON.stringify(parsed));
+          NODE
+          echo 'response-file=/tmp/elite-queue-recovery-plan.json' >> "$GITHUB_OUTPUT"
+
+      - name: Apply and verify independent recovery plan
+        if: steps.cycle.conclusion != 'success' && steps.recovery.conclusion == 'success'
+        env:
+          EASY_OPERATOR_PLAN_FILE: ${{ steps.recovery.outputs.response-file }}
+          EASY_OPERATOR_WORKSPACE: ${{ github.workspace }}
+          EASY_OPERATOR_PROVIDER_TIMEOUT_MS: "45000"
+          EASY_OPERATOR_RATE_LIMIT_MAX_WAIT_MS: "120000"
+          GITHUB_TOKEN: ${{ github.token }}
+          ELITE_QUEUE_STATE: .easy/project-queue-state.json
+        run: node apps/easy-developer-platform/run-project-queue-cycle.mjs
+
+      - name: Verify repository state
+        if: steps.cycle.conclusion == 'success' || steps.recovery.conclusion == 'success'
+        run: |
+          git diff --check
+          node --check apps/easy-developer-platform/project-queue-orchestrator.mjs
+          node --check apps/easy-developer-platform/run-project-queue-cycle.mjs
+          node --check apps/easy-developer-platform/autonomous-coder.mjs
+          node --test apps/easy-developer-platform/test-elite-provider-ladder.mjs
+          npm run test:elite:queue
+
+      - name: Persist verified queue progress
+        if: steps.cycle.conclusion == 'success' || steps.recovery.conclusion == 'success'
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git diff --cached --check
+            git commit -m "chore(elite): advance verified project queue"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
+
+      - name: Fail on unverified queue cycle
+        if: steps.cycle.conclusion != 'success' && steps.recovery.conclusion != 'success'
+        run: |
+          echo "The queue cycle and independent recovery did not reach verified completion; the task remains eligible for the next controlled retry."
+          exit 1
