@@ -236,4 +236,4 @@ Each skill contains:
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
