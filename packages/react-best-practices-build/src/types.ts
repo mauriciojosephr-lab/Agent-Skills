@@ -10,6 +10,7 @@ export interface CodeExample {
   code: string
   language?: string // Default: 'typescript' or 'tsx'
   additionalText?: string // Optional text after code block (explanations, reasons)
+  body?: string // Raw markdown under the label, in source order (all code blocks and text)
 }
 
 export interface Rule {

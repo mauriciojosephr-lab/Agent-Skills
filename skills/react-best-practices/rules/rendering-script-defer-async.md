@@ -55,12 +55,16 @@ export default function Document() {
 ```tsx
 import Script from 'next/script'
 
-export default function Page() {
+// app/layout.tsx - `beforeInteractive` is only supported in the root layout
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <Script src="https://example.com/analytics.js" strategy="afterInteractive" />
-      <Script src="/scripts/utils.js" strategy="beforeInteractive" />
-    </>
+    <html>
+      <body>
+        {children}
+        <Script src="/scripts/utils.js" strategy="beforeInteractive" />
+        <Script src="https://example.com/analytics.js" strategy="afterInteractive" />
+      </body>
+    </html>
   )
 }
 ```

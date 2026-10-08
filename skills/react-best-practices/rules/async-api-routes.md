@@ -35,4 +35,6 @@ export async function GET(request: Request) {
 }
 ```
 
+If an earlier `await` can throw while a started promise is still pending (here, `auth()` rejecting before `configPromise` is awaited), that promise's rejection goes unhandled. Attach a no-op handler (`configPromise.catch(() => {})`) or await everything through a single `Promise.all`.
+
 For operations with more complex dependency chains, use `better-all` to automatically maximize parallelism (see Dependency-Based Parallelization).

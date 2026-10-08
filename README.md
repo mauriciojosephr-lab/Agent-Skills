@@ -1,28 +1,14 @@
 # Agent Skills
 
-A collection of skills for AI coding agents. Skills are packaged instructions and scripts that extend agent capabilities.
+A collection of AAGL skills for AI coding agents. Skills are packaged instructions and scripts that extend agent capabilities.
 
 Skills follow the [Agent Skills](https://agentskills.io/) format.
 
-[![skills.sh](https://skills.sh/b/vercel-labs/agent-skills)](https://skills.sh/vercel-labs/agent-skills)
-
 ## Available Skills
-
-### vercel-optimize
-
-Audits a Vercel project for cost, performance, reliability, caching, function usage, and billing opportunities. It collects Vercel metrics first, then investigates only the routes and files those metrics point to.
-
-**Use when:**
-
-- Optimizing a deployed Vercel project
-- Reducing Vercel costs or function usage
-- Investigating slow or expensive routes
-- Finding caching, ISR, middleware, image, or build-minute issues
-- Producing a ranked cost and performance report
 
 ### react-best-practices
 
-React and Next.js performance optimization guidelines from Vercel Engineering. Contains 40+ rules across 8 categories, prioritized by impact.
+React and Next.js performance optimization guidelines from AAGL. Contains 70 rules across 8 categories, prioritized by impact.
 
 **Use when:**
 
@@ -157,44 +143,10 @@ React composition patterns that scale. Helps avoid boolean prop proliferation th
 - Composing internals for flexibility
 - Avoiding prop drilling
 
-### vercel-deploy-claimable
-
-Deploy applications and websites to Vercel instantly. Designed for use with claude.ai and Claude Desktop to enable deployments directly from conversations. Deployments are "claimable" - users can transfer ownership to their own Vercel account.
-
-**Use when:**
-
-- "Deploy my app"
-- "Deploy this to production"
-- "Push this live"
-- "Deploy and give me the link"
-
-**Features:**
-
-- Auto-detects 40+ frameworks from `package.json`
-- Returns preview URL (live site) and claim URL (transfer ownership)
-- Handles static HTML projects automatically
-- Excludes `node_modules` and `.git` from uploads
-
-**How it works:**
-
-1. Packages your project into a tarball
-2. Detects framework (Next.js, Vite, Astro, etc.)
-3. Uploads to deployment service
-4. Returns preview URL and claim URL
-
-**Output:**
-
-```
-Deployment successful!
-
-Preview URL: https://skill-deploy-abc123.vercel.app
-Claim URL:   https://vercel.com/claim-deployment?code=...
-```
-
 ## Installation
 
 ```bash
-npx skills add vercel-labs/agent-skills
+npx skills add dinesh-aaglcpl/agent-skills
 ```
 
 ## Usage
@@ -202,10 +154,6 @@ npx skills add vercel-labs/agent-skills
 Skills are automatically available once installed. The agent will use them when relevant tasks are detected.
 
 **Examples:**
-
-```
-Deploy my app
-```
 
 ```
 Review this React component for performance issues
@@ -237,3 +185,5 @@ Each skill contains:
 ## License
 
 MIT
+
+Based on [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) (MIT).

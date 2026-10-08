@@ -77,4 +77,6 @@ function onAuthChange() {
 
 Use a Map (not a hook) so it works everywhere: utilities, event handlers, not just React components.
 
+A module-level cache lives as long as the page (or server process) and never shrinks. Only use it for inputs with a bounded set of values, or cap its size (e.g. an LRU). On the server, never cache request- or user-specific results this way.
+
 Reference: [How we made the Vercel Dashboard twice as fast](https://vercel.com/blog/how-we-made-the-vercel-dashboard-twice-as-fast)

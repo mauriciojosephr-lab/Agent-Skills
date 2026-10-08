@@ -1,5 +1,5 @@
 {
-  "name": "@vercel-labs/agent-skills",
+  "name": "@aagl/agent-skills",
   "private": true,
   "type": "module",
   "dependencies": {

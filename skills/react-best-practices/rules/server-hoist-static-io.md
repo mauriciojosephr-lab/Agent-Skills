@@ -144,6 +144,6 @@ When not to use this pattern:
 - Large files that would consume too much memory if kept loaded
 - Sensitive data that shouldn't persist in memory
 
-With Vercel's [Fluid Compute](https://vercel.com/docs/fluid-compute), module-level caching is especially effective because multiple concurrent requests share the same function instance. The static assets stay loaded in memory across requests without cold start penalties.
+On a long-running Node server (e.g. EC2, a container, PM2), module-level code runs once per process, so the static assets stay loaded in memory for every request until the process restarts.
 
-In traditional serverless, each cold start re-executes module-level code, but subsequent warm invocations reuse the loaded assets until the instance is recycled.
+In serverless environments, each cold start re-executes module-level code, but subsequent warm invocations reuse the loaded assets until the instance is recycled.

@@ -1,5 +1,5 @@
 ---
-name: vercel-composition-patterns
+name: aagl-composition-patterns
 description:
   React composition patterns that scale. Use when refactoring components with
   boolean prop proliferation, building flexible component libraries, or
@@ -8,7 +8,7 @@ description:
   API changes.
 license: MIT
 metadata:
-  author: vercel
+  author: aagl
   version: '1.0.0'
 ---
 

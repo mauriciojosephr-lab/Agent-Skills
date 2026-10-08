@@ -4,21 +4,12 @@
   "groupings": [
     {
       "title": "React",
-      "description": "Skills for building production-quality React and React Native interfaces with Vercel engineering patterns.",
+      "description": "Skills for building production-quality React and React Native interfaces with AAGL engineering patterns.",
       "skills": [
-        "vercel-react-best-practices",
-        "vercel-composition-patterns",
-        "vercel-react-view-transitions",
-        "vercel-react-native-skills"
-      ]
-    },
-    {
-      "title": "Vercel",
-      "description": "Skills for deploying, managing, and optimizing applications on Vercel.",
-      "skills": [
-        "deploy-to-vercel",
-        "vercel-cli-with-tokens",
-        "vercel-optimize"
+        "aagl-react-best-practices",
+        "aagl-composition-patterns",
+        "aagl-react-view-transitions",
+        "aagl-react-native-skills"
       ]
     },
     {

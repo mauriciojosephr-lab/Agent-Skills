@@ -1,15 +1,15 @@
 ---
-name: vercel-react-best-practices
-description: React and Next.js performance optimization guidelines from Vercel Engineering. This skill should be used when writing, reviewing, or refactoring React/Next.js code to ensure optimal performance patterns. Triggers on tasks involving React components, Next.js pages, data fetching, bundle optimization, or performance improvements.
+name: aagl-react-best-practices
+description: React and Next.js performance optimization guidelines from AAGL. This skill should be used when writing, reviewing, or refactoring React/Next.js code to ensure optimal performance patterns. Triggers on tasks involving React components, Next.js pages, data fetching, bundle optimization, or performance improvements.
 license: MIT
 metadata:
-  author: vercel
+  author: aagl
   version: "1.0.0"
 ---
 
-# Vercel React Best Practices
+# AAGL React Best Practices
 
-Comprehensive performance optimization guide for React and Next.js applications, maintained by Vercel. Contains 70 rules across 8 categories, prioritized by impact to guide automated refactoring and code generation.
+Comprehensive performance optimization guide for React and Next.js applications, maintained by AAGL. Contains 70 rules across 8 categories, prioritized by impact to guide automated refactoring and code generation.
 
 ## When to Apply
 
@@ -19,6 +19,12 @@ Reference these guidelines when:
 - Reviewing code for performance issues
 - Refactoring existing React/Next.js code
 - Optimizing bundle size or load times
+
+## Before Applying
+
+- **Measure first for lower-priority rules.** Categories 1-3 are usually worth applying on sight. Apply `rerender-`, `rendering-`, and especially `js-` rules only on hot paths or where profiling shows a problem; don't trade readability for micro-optimizations elsewhere.
+- **React Compiler.** If the project has React Compiler enabled, manual `memo()`, `useMemo()`, and `useCallback()` are largely unnecessary, so most memoization rules in `rerender-` do not apply.
+- **Version requirements.** `useEffectEvent` and `<Activity>` require React 19.2+; `use()` and async transitions require React 19; `after()` requires Next.js 15+. Check the project's versions before using them.
 
 ## Rule Categories by Priority
 
@@ -127,7 +133,7 @@ Reference these guidelines when:
 - `advanced-effect-event-deps` - Don't put `useEffectEvent` results in effect deps
 - `advanced-event-handler-refs` - Store event handlers in refs
 - `advanced-init-once` - Initialize app once per app load
-- `advanced-use-latest` - useLatest for stable callback refs
+- `advanced-use-latest` - useEffectEvent for latest callback values without effect re-runs
 
 ## How to Use
 
@@ -147,3 +153,5 @@ Each rule file contains:
 ## Full Compiled Document
 
 For the complete guide with all rules expanded: `AGENTS.md`
+
+`AGENTS.md` is large (~100KB). Prefer reading the individual rule files you need; load the full document only when a task needs the whole guide.

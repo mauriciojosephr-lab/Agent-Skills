@@ -46,7 +46,11 @@ let cookieCache: Record<string, string> | null = null
 function getCookie(name: string) {
   if (!cookieCache) {
     cookieCache = Object.fromEntries(
-      document.cookie.split('; ').map(c => c.split('='))
+      document.cookie.split('; ').map(c => {
+        // Split on the first '=' only; values may contain '='
+        const i = c.indexOf('=')
+        return [c.slice(0, i), c.slice(i + 1)]
+      })
     )
   }
   return cookieCache[name]
@@ -65,6 +69,7 @@ window.addEventListener('storage', (e) => {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     storageCache.clear()
+    cookieCache = null
   }
 })
 ```

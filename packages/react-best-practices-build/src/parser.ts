@@ -72,7 +72,25 @@ export async function parseRuleFile(
     code: string
     language?: string
     additionalText?: string
+    body?: string
   } | null = null
+  // Raw markdown lines in source order, so multiple code blocks, lists and
+  // tables under one label (or in the explanation) survive the round trip
+  let explanationLines: string[] = []
+  let bodyLines: string[] = []
+  const pushRaw = (line: string) =>
+    (currentExample ? bodyLines : explanationLines).push(line)
+  const closeExample = () => {
+    if (!currentExample) return
+    if (additionalText.length > 0) {
+      currentExample.additionalText = additionalText.join('\n\n')
+      additionalText = []
+    }
+    currentExample.body = bodyLines.join('\n').trim()
+    bodyLines = []
+    examples.push(currentExample)
+    currentExample = null
+  }
   let inCodeBlock = false
   let codeBlockLanguage = 'typescript'
   let codeBlockContent: string[] = []
@@ -97,6 +115,7 @@ export async function parseRuleFile(
 
     // Code block start
     if (line.startsWith('```')) {
+      pushRaw(line)
       if (inCodeBlock) {
         // End of code block
         if (currentExample) {
@@ -118,6 +137,7 @@ export async function parseRuleFile(
     }
 
     if (inCodeBlock) {
+      pushRaw(line)
       codeBlockContent.push(line)
       continue
     }
@@ -128,13 +148,7 @@ export async function parseRuleFile(
     const labelMatch = line.match(/^\*\*([^:]+?):\*?\*?$/)
     if (labelMatch) {
       // Save previous example if it exists
-      if (currentExample) {
-        if (additionalText.length > 0) {
-          currentExample.additionalText = additionalText.join('\n\n')
-          additionalText = []
-        }
-        examples.push(currentExample)
-      }
+      closeExample()
       afterCodeBlock = false
       hasCodeBlockForCurrentExample = false
 
@@ -156,14 +170,7 @@ export async function parseRuleFile(
     // Reference links
     if (line.startsWith('Reference:') || line.startsWith('References:')) {
       // Save current example before processing references
-      if (currentExample) {
-        if (additionalText.length > 0) {
-          currentExample.additionalText = additionalText.join('\n\n')
-          additionalText = []
-        }
-        examples.push(currentExample)
-        currentExample = null
-      }
+      closeExample()
 
       const refMatch = line.match(/\[([^\]]+)\]\(([^)]+)\)/g)
       if (refMatch) {
@@ -178,6 +185,9 @@ export async function parseRuleFile(
     }
 
     // Regular text (explanation or additional context after examples)
+    if (!line.startsWith('#')) {
+      pushRaw(line)
+    }
     if (line.trim() && !line.startsWith('#')) {
       if (!currentExample && !inCodeBlock) {
         // Main explanation before any examples
@@ -194,12 +204,10 @@ export async function parseRuleFile(
   }
 
   // Handle last example if still open
-  if (currentExample) {
-    if (additionalText.length > 0) {
-      currentExample.additionalText = additionalText.join('\n\n')
-    }
-    examples.push(currentExample)
-  }
+  closeExample()
+
+  // Prefer the raw explanation so lists, tables and code blocks keep their shape
+  explanation = explanationLines.join('\n').trim() || explanation
 
   // Infer section from filename patterns
   // Pattern: area-description.md where area determines section

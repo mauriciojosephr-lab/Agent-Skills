@@ -7,34 +7,42 @@ tags: rerender, transitions, startTransition, performance
 
 ## Use Transitions for Non-Urgent Updates
 
-Mark frequent, non-urgent state updates as transitions to maintain UI responsiveness.
+Mark non-urgent state updates that trigger expensive renders as transitions, so urgent updates (typing, clicks) can interrupt them and the UI stays responsive.
 
-**Incorrect (blocks UI on every scroll):**
+**Incorrect (expensive tab render blocks further interaction):**
 
 ```tsx
-function ScrollTracker() {
-  const [scrollY, setScrollY] = useState(0)
-  useEffect(() => {
-    const handler = () => setScrollY(window.scrollY)
-    window.addEventListener('scroll', handler, { passive: true })
-    return () => window.removeEventListener('scroll', handler)
-  }, [])
+function Tabs() {
+  const [tab, setTab] = useState('overview')
+
+  return (
+    <>
+      <TabBar selected={tab} onSelect={setTab} />
+      <TabPanel tab={tab} /> {/* slow to render */}
+    </>
+  )
 }
 ```
 
-**Correct (non-blocking updates):**
+**Correct (tab render is interruptible):**
 
 ```tsx
-import { startTransition } from 'react'
+import { startTransition, useState } from 'react'
 
-function ScrollTracker() {
-  const [scrollY, setScrollY] = useState(0)
-  useEffect(() => {
-    const handler = () => {
-      startTransition(() => setScrollY(window.scrollY))
-    }
-    window.addEventListener('scroll', handler, { passive: true })
-    return () => window.removeEventListener('scroll', handler)
-  }, [])
+function Tabs() {
+  const [tab, setTab] = useState('overview')
+
+  const selectTab = (next: string) => {
+    startTransition(() => setTab(next))
+  }
+
+  return (
+    <>
+      <TabBar selected={tab} onSelect={selectTab} />
+      <TabPanel tab={tab} /> {/* slow to render */}
+    </>
+  )
 }
 ```
+
+A transition still re-renders; it only lowers the priority. For high-frequency values that don't need to drive rendering (scroll position, pointer coordinates), use a ref instead (see [Use useRef for Transient Values](./rerender-use-ref-transient-values.md)).

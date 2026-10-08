@@ -4,7 +4,7 @@ This file provides guidance to AI coding agents (Claude Code, Cursor, Copilot, e
 
 ## Repository Overview
 
-A collection of skills for AI coding agents working with Vercel projects. Skills are packaged instructions and scripts that extend agent capabilities.
+A collection of AAGL skills for AI coding agents working on React, Next.js, and React Native projects. Skills are packaged instructions and scripts that extend agent capabilities.
 
 ## Creating a New Skill
 
@@ -23,7 +23,7 @@ skills/
 
 ### Naming Conventions
 
-- **Skill directory**: `kebab-case` (e.g., `vercel-deploy`, `log-monitor`)
+- **Skill directory**: `kebab-case` (e.g., `react-best-practices`, `log-monitor`)
 - **SKILL.md**: Always uppercase, always this exact filename
 - **Scripts**: `kebab-case.sh` or `kebab-case.mjs` (e.g., `deploy.sh`, `collect-signals.mjs`)
 
@@ -92,7 +92,7 @@ Skills are loaded on-demand — only the skill name and description are loaded a
 Document skills.sh installation for public skills:
 
 ```bash
-npx skills add vercel-labs/agent-skills --skill {skill-name}
+npx skills add dinesh-aaglcpl/agent-skills --skill {skill-name}
 ```
 
 For manual installs, document the native path when the skill needs one.

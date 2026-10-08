@@ -27,6 +27,14 @@ function incrementVersion(version: string): string {
 }
 
 /**
+ * Rule files link to sibling rules as ./name.md; the compiled document sits
+ * one level above the rules directory, so point those links at rules/name.md
+ */
+function rewriteRuleLinks(markdown: string): string {
+  return markdown.replace(/\]\(\.\/([\w-]+\.md)\)/g, '](rules/$1)')
+}
+
+/**
  * Generate markdown from rules
  */
 function generateMarkdown(
@@ -89,13 +97,20 @@ function generateMarkdown(
       md += `**Impact: ${rule.impact}${
         rule.impactDescription ? ` (${rule.impactDescription})` : ''
       }**\n\n`
-      md += `${rule.explanation}\n\n`
+      md += `${rewriteRuleLinks(rule.explanation)}\n\n`
 
       rule.examples.forEach((example) => {
         if (example.description) {
           md += `**${example.label}: ${example.description}**\n\n`
         } else {
           md += `**${example.label}:**\n\n`
+        }
+        if (example.body !== undefined) {
+          // Raw body keeps every code block and paragraph in source order
+          if (example.body) {
+            md += `${rewriteRuleLinks(example.body)}\n\n`
+          }
+          return
         }
         // Only generate code block if there's actual code
         if (example.code && example.code.trim()) {

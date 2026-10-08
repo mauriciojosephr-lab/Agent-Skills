@@ -12,7 +12,7 @@ Analytics, logging, and error tracking don't block user interaction. Load them a
 **Incorrect (blocks initial bundle):**
 
 ```tsx
-import { Analytics } from '@vercel/analytics/react'
+import { Analytics } from '@/lib/analytics'
 
 export default function RootLayout({ children }) {
   return (
@@ -29,21 +29,33 @@ export default function RootLayout({ children }) {
 **Correct (loads after hydration):**
 
 ```tsx
+// app/deferred-analytics.tsx
+'use client'
+
 import dynamic from 'next/dynamic'
 
 const Analytics = dynamic(
-  () => import('@vercel/analytics/react').then(m => m.Analytics),
+  () => import('@/lib/analytics').then(m => m.Analytics),
   { ssr: false }
 )
+
+export function DeferredAnalytics() {
+  return <Analytics />
+}
+
+// app/layout.tsx
+import { DeferredAnalytics } from './deferred-analytics'
 
 export default function RootLayout({ children }) {
   return (
     <html>
       <body>
         {children}
-        <Analytics />
+        <DeferredAnalytics />
       </body>
     </html>
   )
 }
 ```
+
+In the App Router, `ssr: false` is only allowed inside a Client Component, so the dynamic import lives in a small `'use client'` wrapper rather than in the layout itself.
