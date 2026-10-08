@@ -127,4 +127,6 @@ When adding or modifying rules:
 
 ## Acknowledgments
 
+Maintained and extended by Dinesh at AAGL.
+
 Originally created by [@shuding](https://x.com/shuding) at [Vercel](https://vercel.com).

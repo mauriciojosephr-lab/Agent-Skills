@@ -16,10 +16,10 @@ const outputDirectory = 'dist';
 const archiveEnvironment = {
   ...process.env,
   GIT_AUTHOR_DATE: '2000-01-01T00:00:00Z',
-  GIT_AUTHOR_EMAIL: 'agent-skills@vercel.com',
+  GIT_AUTHOR_EMAIL: 'agent-skills@aaglconsultancy.com',
   GIT_AUTHOR_NAME: 'Agent Skills',
   GIT_COMMITTER_DATE: '2000-01-01T00:00:00Z',
-  GIT_COMMITTER_EMAIL: 'agent-skills@vercel.com',
+  GIT_COMMITTER_EMAIL: 'agent-skills@aaglconsultancy.com',
   GIT_COMMITTER_NAME: 'Agent Skills',
 };
 

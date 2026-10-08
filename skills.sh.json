@@ -11,13 +11,6 @@
         "aagl-react-view-transitions",
         "aagl-react-native-skills"
       ]
-    },
-    {
-      "title": "Design",
-      "description": "Skills for reviewing and improving web interfaces, accessibility, and UX quality.",
-      "skills": [
-        "web-design-guidelines"
-      ]
     }
   ]
 }

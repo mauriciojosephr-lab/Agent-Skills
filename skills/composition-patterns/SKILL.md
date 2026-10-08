@@ -8,7 +8,7 @@ description:
   API changes.
 license: MIT
 metadata:
-  author: aagl
+  author: dinesh (AAGL)
   version: '1.0.0'
 ---
 

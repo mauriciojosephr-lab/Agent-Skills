@@ -7,7 +7,7 @@ description:
   involving React Native, Expo, mobile performance, or native platform APIs.
 license: MIT
 metadata:
-  author: aagl
+  author: dinesh (AAGL)
   version: '1.0.0'
 ---
 
