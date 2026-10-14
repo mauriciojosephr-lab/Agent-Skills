@@ -1,6 +1,6 @@
 # Validation and rollout matrix
 
-Use this matrix for executed optimizations. Tailor it to the product's supported routes, locales, browsers, and content systems.
+Use this matrix for executed optimizations. Tailor it to the product's supported routes and browsers, and include locale, RTL, external-content, print, and theme checks only for traits the app has.
 
 ## Build validation
 
@@ -41,8 +41,8 @@ Cover at least:
 
 - Small mobile, large mobile, tablet, desktop, and wide desktop.
 - Every custom Sass breakpoint.
-- LTR and RTL documents.
-- Every locale with a special font, line height, weight, or glyph requirement.
+- LTR and RTL documents when the app supports RTL.
+- Every supported locale with a special font, line height, weight, or glyph requirement.
 - Print preview and generated PDF/email output when styles are shared.
 - Light/dark/high-contrast themes when supported.
 - Loading, error, disabled, focus, hover, selected, and expanded states.
@@ -56,7 +56,8 @@ Prefer screenshot diffing for stable routes. Review cascade and stylesheet order
 
 ## Runtime content coverage
 
-- Snapshot representative CMS and remote HTML across markets and dealers.
+- Snapshot representative CMS and remote HTML for each content variant the app
+  serves, such as regions, tenants, or brands.
 - Exercise dynamically constructed utility classes.
 - Test authenticated and anonymous route variants, with a saved test-account
   session for each role that changes the rendered UI.
@@ -65,8 +66,8 @@ Prefer screenshot diffing for stable routes. Review cascade and stylesheet order
 - When `experimental.inlineCss` is enabled, confirm each prerendered page embeds each stylesheet once.
 - Force the root error boundary and verify its content, accessibility, and CSS
   dependency set.
-- Inspect utility or framework-only routes that should not inherit application
-  component registration.
+- Check that lightweight routes, such as embeds or framework-only pages, don't
+  inherit app-wide providers or component registration.
 - Treat browser CSS coverage as evidence only; do not use it as the sole deletion criterion.
 
 ## Sass contract tests
@@ -74,9 +75,9 @@ Prefer screenshot diffing for stable routes. Review cascade and stylesheet order
 - Compile token-only partials and assert zero emitted CSS.
 - Snapshot selectors from allowlisted utility generators.
 - Assert removed Cartesian combinations stay absent.
-- Assert required CMS/runtime selectors remain.
-- Assert language and RTL variables resolve for every supported case.
-- Compare selector-to-declaration maps when grouping language selectors.
+- Assert selectors required by runtime or external content remain.
+- When styles vary by locale or direction, assert the variables resolve for every supported case.
+- Compare selector-to-declaration maps when grouping locale selectors.
 - Snapshot lowered output for representative logical-property rules at the production targets, and assert that no rule from a split selector list is dropped. Open Lightning CSS issues report dropped rules.
 - Enforce maximum compiled byte sizes for the largest generators.
 - Guard source boundaries that must remain token-only or dependency-light.
@@ -87,13 +88,13 @@ Use small, reversible changes:
 
 1. Measurement tooling and safelist.
 2. Browser-target correction, only if authorized.
-3. Locale/direction generator reduction.
-4. Border/color/spacing generator reduction.
-5. Framework utility-map reduction.
-6. Global-to-route scoping.
-7. Root error, client barrel, and side-effect graph isolation.
-8. CSS Module cleanup.
-9. CI budget enforcement.
+3. Sass generator reduction, starting with the generators that emit the most
+   CSS on the most routes.
+4. Framework utility-map and overlapping utility-system reduction.
+5. Global-to-route scoping.
+6. Root error, client barrel, and side-effect graph isolation.
+7. CSS Module cleanup.
+8. CI budget enforcement.
 
 Rebuild and remeasure after every step. Avoid batching unrelated phases.
 
@@ -107,7 +108,8 @@ Define project-specific numbers before implementation. A complete optimization n
 - No unexplained visual diffs remain.
 - Manifest-attributed and browser-requested CSS differences are explained and
   any residual transient preloads are recorded.
-- CMS, RTL, locale, print, and third-party coverage passes.
+- Coverage passes for every trait the app has, such as external content, RTL,
+  locales, print, themes, and third-party widgets.
 - Production Turbopack build succeeds.
 - Webpack fallback remains documented for Next.js 15 when required.
 - Changes are divided into commits or PRs that can be reverted independently.

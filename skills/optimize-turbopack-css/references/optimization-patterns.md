@@ -39,7 +39,7 @@ Add a Sass snapshot test for the emitted selector set. Require a safelist change
 
 ## Centralize language and direction behavior
 
-Do not repeat every locale selector inside every font-size, heading, button, and print utility.
+Apply this when the app varies typography or spacing by locale or direction. Do not repeat every locale selector inside every font-size, heading, button, and print utility.
 
 Before:
 
@@ -58,12 +58,12 @@ Before:
 After:
 
 ```scss
-html:lang(vi) {
-  --app-font: 'Noto Sans';
+html:lang(ja) {
+  --app-font: 'Noto Sans JP';
 }
-html:lang(ta) {
-  --app-font: 'Noto Sans Tamil';
-  --app-text-line-height: 1.4;
+html:lang(ar) {
+  --app-font: 'Noto Sans Arabic';
+  --app-text-line-height: 1.6;
 }
 
 body {
@@ -76,7 +76,7 @@ body {
 }
 ```
 
-Preserve locale-specific weight and line-height behavior. Verify every supported locale, RTL, and print output.
+Preserve locale-specific weight and line-height behavior. Verify every supported locale, plus RTL and print output when the app supports them.
 
 ## Group locale selectors by declaration signature
 
@@ -128,7 +128,7 @@ Inventory class families by property, not package name:
 
 | Property family | Examples                                                            |
 | --------------- | ------------------------------------------------------------------- |
-| Spacing         | Bootstrap, design-system spacing, custom logical spacing            |
+| Spacing         | Framework utilities, design-system spacing, custom spacing          |
 | Typography      | Framework headings, design-system typography, custom font utilities |
 | Borders/colors  | Framework utilities, palette loops, semantic tokens                 |
 | Layout          | Grid, display, flex, width, visibility                              |
@@ -137,10 +137,11 @@ Choose one canonical family per use case. Retain compatibility aliases only for 
 
 Configure a framework utility API instead of generating an overlapping custom copy when possible.
 
-Before deleting a custom logical spacing family, inspect what the replacement
-actually emits. Bootstrap start/end utilities can use physical left/right
-properties and assume a separate RTLCSS build. Applications that switch `dir`
-at runtime with one stylesheet need logical properties:
+Before replacing a custom utility family with a framework's, inspect what the
+framework actually emits. For example, Bootstrap's start and end utilities use
+physical left and right properties and assume a separate RTLCSS build, so an
+app that switches `dir` at runtime with one stylesheet must remap them to
+logical properties:
 
 ```scss
 @use 'sass:map';
@@ -152,18 +153,18 @@ $utilities: map.set(
 );
 ```
 
-Apply the same pattern to margin-end and padding start/end before Bootstrap's
-utility API emits classes. Verify physical computed values in both LTR and RTL.
-Keep custom negative logical margins if the framework does not generate them;
-remove invalid negative padding.
+Apply the same remap to margin-end and padding start and end before Bootstrap's
+utility API emits classes, and verify physical computed values in both LTR and
+RTL. Keep custom utilities the framework doesn't generate, such as negative
+logical margins.
 
-## Curate Bootstrap and other frameworks
+## Curate CSS framework entries
 
-Inspect the actual Sass entry before labeling it "full Bootstrap." Measure each import independently.
+Inspect the actual Sass entry before describing it as the full framework. Measure each import independently.
 
-Retain required configuration dependencies in their documented order, then include only required layout, component, helper, and utility entries. Restrict the Bootstrap `$utilities` map and its responsive variants using the class inventory.
+Retain required configuration dependencies in their documented order, then include only required layout, component, helper, and utility entries. Restrict the framework's utility configuration, such as Bootstrap's `$utilities` map, and its responsive variants using the class inventory.
 
-Verify dynamic framework classes from CMS or third-party components before removal.
+Verify dynamic framework classes from external content or third-party components before removal.
 
 ## Separate universal and route-owned CSS
 
@@ -196,11 +197,11 @@ each graph change. Next.js 16 removed First Load JS from `next build` output, so
 use `next experimental-analyze` (16.1+) or a bundle analyzer for the JavaScript
 plane. Improvements on one plane do not guarantee improvements on all three.
 
-## Protect runtime and CMS content
+## Protect runtime and external content
 
-Collect classes from remote HTML, commerce templates, CMS records, localization, emails, and feature flags. Maintain a reviewed safelist with source, owner, and expiration criteria.
+Collect classes from every source the app renders outside its own components, such as CMS records, remote HTML, templates, translations, emails, and feature flags. Maintain a reviewed safelist with source, owner, and expiration criteria.
 
-Do not use blanket PurgeCSS against an application that renders remote or dynamically constructed class names. If a purge stage is explicitly authorized, run it only with a tested extractor and safelist, and compare rendered content across representative markets.
+Do not use blanket PurgeCSS against an application that renders remote or dynamically constructed class names. If a purge stage is explicitly authorized, run it only with a tested extractor and safelist, and compare rendered content across representative content variants.
 
 ## Optimize CSS Modules after global CSS
 

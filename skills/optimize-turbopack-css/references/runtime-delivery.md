@@ -161,10 +161,9 @@ When successful routes request unrelated CSS, inspect:
 5. Route prefetching and framework fallbacks. Hovering over or prefetching a
    `<Link>` preloads the target route's CSS.
 
-Keep last-resort error UI self-contained. Avoid importing the normal design
-system, translation/action stack, image abstraction, sanitizer, or shared error
-component when native HTML, a small CSS Module, and text rendering meet the
-fallback contract.
+Keep last-resort error UI self-contained. Avoid importing the full design
+system, app-wide providers, or shared components when native HTML, a small CSS
+Module, and plain text meet the fallback contract.
 
 Global-error, not-found, error, and loading CSS attach to successful routes
 under webpack too, and a Next.js maintainer describes the not-found preload as

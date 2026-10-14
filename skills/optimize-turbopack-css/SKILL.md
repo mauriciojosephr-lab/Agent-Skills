@@ -27,7 +27,7 @@ Determine whether the user asked for analysis, a plan, or execution.
 - For planning, return prioritized phases with evidence, expected impact, risks, and acceptance criteria.
 - For execution, implement one optimization class at a time, verify it, and preserve unrelated worktree changes.
 - Never weaken the supported-browser contract without explicit authorization. A newer Browserslist is an optimization only when product support permits it.
-- Never purge selectors until runtime-generated, CMS, localization, and third-party class names have been inventoried.
+- Never purge selectors until class names that the app builds at runtime or receives from outside the repository, such as CMS content, translations, or third-party code, have been inventoried.
 
 ## 1. Discover the project
 
@@ -41,6 +41,15 @@ Locate the package containing `next`, then inspect:
 - Root layouts and every global CSS/SCSS import.
 - SCSS entry points, CSS Modules, shared partials, framework entries, utility generators, and package aliases.
 - Existing dirty changes. Preserve them and avoid rewriting overlapping files unnecessarily.
+
+Record which of these traits the app has. Later checks for a trait apply only when the app has it:
+
+- Multiple locales, locale-specific typography, or right-to-left (RTL) documents.
+- HTML or class names from outside the repository, such as CMS content, remote templates, or third-party embeds.
+- A CSS framework such as Bootstrap, or an in-house utility library.
+- Web components or other side-effect client registration.
+- Print, email, or PDF output that shares stylesheets.
+- Themes such as dark or high-contrast modes.
 
 Classify each stylesheet as one of:
 
@@ -116,7 +125,7 @@ Expect this duplication to surface after migration. Webpack's whole-file cssnano
 
 ### D. Global framework and utility surface
 
-Measure framework, design-system, theme, reset, CMS, and utility imports independently. Check for overlapping systems such as multiple spacing, color, typography, border, display, or grid utility families.
+Measure framework, design-system, theme, reset, utility, and external-content compatibility imports independently. Check for overlapping systems such as multiple spacing, color, typography, border, display, or grid utility families.
 
 Use import ablation builds to determine contribution. Do not describe a curated framework entry as a full framework until its imports have been inspected.
 
@@ -152,18 +161,18 @@ Collect class usage from:
 
 - Static JSX/TSX/HTML and template strings.
 - Class composition helpers and dynamically generated names.
-- Tests, stories, email/print templates, and server-rendered fragments.
-- CMS, commerce, localization, and remote HTML across supported markets.
+- Tests, stories, templates, and server-rendered fragments.
+- Content from outside the repository, such as CMS entries, remote HTML, translations, and third-party embeds, for every content variant the app serves.
 - Browser CSS coverage over representative authenticated and anonymous routes.
 
 Create an explicit safelist for runtime-only classes. Record the source and owner of each pattern. Coverage reflects only the routes, sessions, and interactions exercised, so treat it as supporting evidence, not proof that a selector is unused.
 
 ## 5. Prioritize work by reach and emitted size
 
-Optimize in this order unless measurements contradict it:
+Rank each candidate by how many routes load it and how much CSS it emits, and skip categories that don't apply to the app. A typical order is:
 
 1. Universally loaded Cartesian Sass generators.
-2. Repeated locale/direction/print selector expansion.
+2. Selectors repeated for each locale, direction, theme, or print mode.
 3. Overlapping global utility systems.
 4. Oversized framework utility maps and global component layers.
 5. Selector-emitting shared partials.
@@ -184,13 +193,13 @@ For each optimization:
 6. Run the validation matrix.
 7. Report measured impact and remaining risk before continuing.
 
-Use explicit allowlists for utility generators. Centralize language and direction behavior with inherited CSS variables where possible. Consolidate overlapping utility families. Keep tokens separate from selector-emitting entries. When lowering is required, reduce the rules and selectors that carry one-sided logical declarations. Route-scope CSS only when the route graph supports it.
+Use explicit allowlists for utility generators. Where styles vary by locale, direction, or theme, centralize the variation in inherited CSS variables. Consolidate overlapping utility families. Keep tokens separate from selector-emitting entries. When lowering is required, reduce the rules and selectors that carry one-sided logical declarations. Route-scope CSS only when the route graph supports it.
 
 Avoid combining browser-target changes, Sass-generator refactors, and stylesheet-boundary changes in one measurement. Separate variables so each result is attributable and reversible.
 
 ## 7. Validate and enforce budgets
 
-Validate production builds, representative routes, supported viewports, LTR/RTL computed properties, every supported locale, print, CMS content, CSS ordering, specificity-sensitive utility combinations, error fallbacks, and applied-versus-requested browser CSS. Use the detailed matrix in the validation reference.
+Validate production builds, representative routes, supported viewports, CSS ordering, specificity-sensitive utility combinations, error fallbacks, and applied-versus-requested browser CSS. Add locale, RTL, external-content, print, and theme coverage for the traits recorded in step 1. Use the detailed matrix in the validation reference.
 
 Introduce CI budgets after the optimized baseline stabilizes. Track both global assets and route payloads. Require an intentional budget update for regressions.
 
@@ -204,7 +213,8 @@ Lead with the root cause and measured outcome. Include:
 - Before/after route and asset table.
 - Source files and generators responsible.
 - Changes implemented or proposed in priority order.
-- Compatibility, CMS, RTL, locale, print, and ordering risks.
+- App traits recorded in step 1, and checks skipped because a trait is absent.
+- Compatibility and ordering risks, plus locale, RTL, external-content, print, and theme risks for the traits the app has.
 - Routes, sessions, and interactions the browser measurements covered, and any they could not reach.
 - Verification performed and remaining follow-up.
 
